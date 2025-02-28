@@ -2,7 +2,7 @@
   become: 'yes'
   become_method: sudo
   template:
-    src: opt/vault/agent/vault-agent.hcl.j2
+    src: "{{ vault_config_template_file }}"
     dest: /opt/vault/agent/vault-agent.hcl
     mode: 0644
     owner: vault

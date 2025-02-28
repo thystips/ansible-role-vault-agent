@@ -1,2 +1,3 @@
 ---
 # vars file for ansible-role-vault-agent
+vault_config_template_file: "opt/vault/agent/vault-agent.hcl.j2"
