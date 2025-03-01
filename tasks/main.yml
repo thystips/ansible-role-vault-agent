@@ -1,16 +1,124 @@
----
-# tasks file for ansible-role-vault-agent
+- name: Copy Vault Cert to system trust
+  ansible.builtin.copy:
+    src: "{{ vault_ca_source_path }}"
+    dest: "{{ ca_trust_path }}/vault-ca.crt" # /etc/pki/ca-trust/source/anchors/
+    mode: "0755"
+    owner: root
+    group: root
+  notify: Update CA certificates trust
 
-- include_tasks: create-vault-user.yml
+- name: Update system CA trust
+  ansible.builtin.meta: flush_handlers
 
-- include_tasks: install-vault.yml
+- name: Add a new group called vault
+  ansible.builtin.group:
+    name: vault
+    state: present
+    system: true
+  tags: user
 
-- include_tasks: create-vault-agent-service.yml
+- name: Add user vault
+  ansible.builtin.user:
+    name: vault
+    comment: "Vault Agent service user"
+    group: vault
+    create_home: false
+    state: present
+    shell: /bin/false
+    system: true
+    uid: 60012
+  tags: user
 
-- include_tasks: create-vault-agent-config.yml
+- name: Add specified user to vault group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    group: vault
+    append: true
+  loop: "{{ app_service_users }}"
+  when: app_service_users is defined
 
-- include_tasks: configure-vault-cert.yml
+- name: Download file with check (sha256)
+  ansible.builtin.get_url:
+    url: https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip
+    dest: /tmp
+    checksum: sha256:https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_SHA256SUMS
+    mode: "0755"
 
-- include_tasks: create-vault-token-helper.yml
+- name: Extract Vault zip file into /usr/bin
+  ansible.builtin.unarchive:
+    src: "/tmp/vault_{{ vault_version }}_linux_amd64.zip"
+    dest: /usr/bin
+    creates: /usr/bin/vault
+  notify: Restart vault-agent
+  tags: install
 
-- include_tasks: restart-vault-agent.yml
+- name: Set vault file attributes
+  ansible.builtin.file:
+    path: /usr/bin/vault
+    owner: root
+    group: root
+    mode: "0755"
+  tags: install
+
+- name: Create Vault config directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: vault
+    group: vault
+  with_items:
+    - /etc/vault.d
+    - /opt/vault/data
+    - /opt/vault/agent
+    - /opt/vault/var/run
+    - /opt/vault/tls
+    - /opt/vault/log
+    - /opt/vault/etc/vault.d
+  notify: Restart vault-agent
+  tags: install
+
+- name: Create Vault config directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0750"
+    owner: vault
+    group: vault
+  with_items:
+    - /opt/vault/token
+  notify: Restart vault-agent
+  tags: install
+
+- name: Add vault agent service file
+  ansible.builtin.template:
+    src: usr/lib/systemd/system/vault-agent.service.j2
+    dest: /usr/lib/systemd/system/vault-agent.service
+    mode: "0644"
+    owner: vault
+    group: vault
+  notify: Restart vault-agent
+  tags: service
+
+- name: Add Vault environment file for the systemd service
+  ansible.builtin.template:
+    src: opt/vault/etc/vault.d/vault.sh.j2
+    dest: "{{ vault_environment_file }}" # Default: /opt/vault/etc/vault.d/vault.sh
+    mode: "0755"
+    owner: vault
+    group: vault
+  notify: Restart vault-agent
+  tags: service
+
+- name: Add vault agent config
+  ansible.builtin.template:
+    src: "{{ vault_config_template_file }}"
+    dest: /opt/vault/agent/vault-agent.hcl
+    mode: "0644"
+    owner: vault
+    group: vault
+  notify: Restart vault-agent
+  tags: config
+
+- name: Add vault token helper
+  ansible.builtin.include_tasks: create-vault-token-helper.yml

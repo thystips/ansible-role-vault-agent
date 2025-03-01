@@ -1,19 +1,16 @@
 galaxy_info:
+  namespace: thystips
   role_name: vault_agent
-  author: Kinnaird McQuade
+  author: ThysTips
   description: Installs and configures Vault Agent Auto-Auth feature.
   license: "license (BSD, MIT)"
-  min_ansible_version: 2.4
+  min_ansible_version: "2.4"
   platforms:
-   - name: EL
-     versions:
-     - 7
+    - name: Ubuntu
+      versions:
+        - noble
   galaxy_tags:
     - vault
     - security
-    - aws
 
 dependencies: []
-  # List your role dependencies here, one per line. Be sure to remove the '[]' above,
-  # if you add dependencies to this list.
-  # TODO: Add rbenv here

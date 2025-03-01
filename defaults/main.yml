@@ -5,8 +5,8 @@
 vault_addr: "https://vault.example.com"
 vault_skip_verify: "false"
 vault_role: "kinnaird"
-app_service_user: "" # replace this with the service user for the app/service
-vault_version: "0.11.5"
+app_service_user: [] # replace this with the service user for the app/service
+vault_version: "1.18.5"
 vault_ca_source_path: "files/dummy-ca.crt"
 
 # System-level options
@@ -33,12 +33,5 @@ iam_server_id_header_value: "vault.example.com"
 # Others
 vault_cacert: "/opt/vault/tls/vault-ca.crt"
 vault_ca_file: "/opt/vault/tls/ca.crt"
-ca_certificates_update: "/usr/bin/update-ca-trust extract"
-ca_trust_path: "/etc/pki/ca-trust/source/anchors"
-
-# Encrypting tokens variables; not used right now
-wrap_ttl: "5m"
-aad_env_var: "TEST_AAD_ENV"
-dh_type: "curve25519"
-dh_path: "/tmp/file-foo-dhpath2"
-encrypted_vault_token_path: "/tmp/file-bar"
+ca_certificates_update: "update-ca-certificates"
+ca_trust_path: "/usr/local/share/ca-certificates"

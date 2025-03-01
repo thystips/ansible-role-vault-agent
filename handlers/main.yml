@@ -1,2 +1,12 @@
 ---
 # handlers file for ansible-role-vault-agent
+- name: Update CA certificates trust
+  ansible.builtin.command: "{{ ca_certificates_update }}"
+  changed_when: true
+
+- name: Restart vault-agent
+  ansible.builtin.systemd:
+    name: vault-agent.service
+    state: restarted
+    enabled: true
+    daemon_reload: true
